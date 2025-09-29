@@ -9,8 +9,9 @@ interface AreaChartProps{
 export default function AreaChart({games}:AreaChartProps){ 
     const [selectedData, setSelectedData] = useState<IGame[]>([])
     useEffect(()=>{
+        if(games.length === 0) return;
         setSelectedData(games.filter((game, index, arr)=>(index === 0 || game.precoRegular != arr[index-1].precoRegular)))
-    },[])
+    },[games])
 
     return(
         <section className="w-full h-full">

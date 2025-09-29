@@ -4,17 +4,18 @@ import type { IGame } from "../shared/interfaces/IGame";
 import { useGameStore } from "../stores/games";
 import AreaChart from "./components/charts/area";
 import DateFilter from "./components/filters/date";
+import { EnumMonthName } from "../shared/enumMonthName";
 
 export default function Home(){
     const {games, setGames} = useGameStore()
-    const [gamesDate,setGamesDate] = useState<Date[]>([])
-    const [dayFilter, setDayFilter] = useState('Todos')
-    const [monthFilter, setMonthFilter] = useState('Todos')
-    const [yearFilter, setYearFilter] = useState('Todos')
+    const [gamesDate,setGamesDate] = useState<string[]>([])
+    const [dayFilter, setDayFilter] = useState(['Todos'])
+    const [monthFilter, setMonthFilter] = useState(['Todos'])
+    const [yearFilter, setYearFilter] = useState(['Todos'])
     
     useEffect(()=>{
-        const data = Mockdata.map<IGame>((game)=>{
-            return ({
+        const data = Mockdata.map<IGame>((game)=>(
+            {
                 data:game.timestamp.substring(0,10),
                 discontoNaData: Number(game.discount_cut),
                 loja:game.shop_name,
@@ -22,15 +23,21 @@ export default function Home(){
                 precoNaData: Number(game.price_amount),
                 precoRegular:Number(game.regular_amount),
                 moeda:game.price_currency,
-            })
-        })
-        setGamesDate(data.map(({data})=>new Date(data)))
+            }
+        ))
+        setGamesDate(data.map(({data})=>{
+            const date = new Date(data);
+            date.setHours(0,0,0,0);
+            return date.toISOString()
+        }))
         setGames(data)
     },[])
 
     useEffect(()=>{
-        const data = Mockdata.map<IGame>((game)=>{
-            return ({
+        if(gamesDate.length === 0) return;
+
+        const data = Mockdata.map<IGame>((game)=> (
+            {
                 data:game.timestamp.substring(0,10),
                 discontoNaData: Number(game.discount_cut),
                 loja:game.shop_name,
@@ -38,20 +45,22 @@ export default function Home(){
                 precoNaData: Number(game.price_amount),
                 precoRegular:Number(game.regular_amount),
                 moeda:game.price_currency,
-            })
-        })
-        const years = yearFilter == 'Todos'?
-            gamesDate.map((date)=>date):
-            gamesDate.filter((date)=>yearFilter.includes(date.getFullYear().toString()));
-        const month = yearFilter == 'Todos'?
-            gamesDate.map((date)=>date):
-            gamesDate.filter((date)=>monthFilter.includes(`${String.fromCharCode(date.getMonth()+65)} ${date.toLocaleString('pt-BR', { month: 'long' })}`));
-        const day = dayFilter == 'Todos'?
-            gamesDate.map((date)=>date):
-            gamesDate.filter((date)=>date.getDate());
+            }
+        ))
+        
+        const years = yearFilter.includes('Todos')? gamesDate:
+            gamesDate.filter((date)=>yearFilter.includes(date.substring(0,4)));
+        const month = monthFilter.includes('Todos')? gamesDate:
+            gamesDate.filter((date)=>monthFilter.includes(EnumMonthName[Number.parseInt(date.substring(5,7))]))
+        const day = dayFilter.includes('Todos')? gamesDate:
+            gamesDate.filter((date)=>dayFilter.includes(date.substring(8,10)));
+            
         setGames(data.filter(({data})=>{
             const date = new Date(data);
-            return years.includes(date) && month.includes(date) && day.includes(date)
+            date.setHours(0,0,0,0);
+            return years.includes(date.toISOString()) 
+            && month.includes(date.toISOString()) 
+            && day.includes(date.toISOString())
         }))
     },[dayFilter,monthFilter,yearFilter])
 
@@ -62,7 +71,7 @@ export default function Home(){
                 <DateFilter
                     period="Ano"
                     gameDates={gamesDate}
-                    setSelectedOptions={setDayFilter}
+                    setSelectedOptions={setYearFilter}
                 />
                 <DateFilter
                     period="Mês"
@@ -72,10 +81,10 @@ export default function Home(){
                 <DateFilter
                     period="Dia"
                     gameDates={gamesDate}
-                    setSelectedOptions={setYearFilter}
+                    setSelectedOptions={setDayFilter}
                 />
             </section>
-            {games.length>0 &&
+            {games.length > 0 &&
             (
                 <AreaChart 
                     games={games}
