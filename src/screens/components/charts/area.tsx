@@ -14,7 +14,7 @@ export default function AreaChart({games}:AreaChartProps){
     },[games])
 
     return(
-        <section className="w-full h-full">
+        <section className="w-full h-full p-8">
             <Line
                 options={{
                     responsive:true,
@@ -57,7 +57,6 @@ export default function AreaChart({games}:AreaChartProps){
                         label:'Valores Games',
                         data: selectedData.map(({data,precoRegular})=>({x:data,y:precoRegular})),
                         fill:true,
-                        borderWidth: 2,
                         borderColor: "rgba(34,197,94,1)", // verde-500 Tailwind como exemplo
                         backgroundColor: "rgba(34,197,94,0.12)",
                         pointRadius: 3,

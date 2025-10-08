@@ -5,6 +5,7 @@ import { useGameStore } from "../stores/games";
 import AreaChart from "./components/charts/area";
 import DateFilter from "./components/filters/date";
 import { EnumMonthName } from "../shared/enumMonthName";
+import LineChart from "./components/charts/line";
 
 export default function Home(){
     const {games, setGames} = useGameStore()
@@ -66,7 +67,7 @@ export default function Home(){
 
 
     return (
-        <main className='w-full h-full'>
+        <main className='w-full h-full flex flex-col'>
             <section>
                 <DateFilter
                     period="Ano"
@@ -86,9 +87,14 @@ export default function Home(){
             </section>
             {games.length > 0 &&
             (
-                <AreaChart 
-                    games={games}
-                />
+                <>
+                    <AreaChart 
+                        games={games}
+                    />
+                    <LineChart
+                        games={games}
+                    />
+                </>
             )}
         </main>
     )
