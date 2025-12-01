@@ -26,3 +26,13 @@ export interface IGame {
     last_updated:string
     prices:IHistory[]
 }
+
+export interface ISelectOption{
+    value:string,
+    label:string
+}
+
+export interface IGameEntity {
+    name:string,
+    id:string
+}

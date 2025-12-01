@@ -11,7 +11,7 @@ import {
 } from 'chart.js';
 import "chartjs-adapter-date-fns";
 import Home from "./screens/home";
-
+import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom'
 ChartJS.register(
   TimeScale,
   LinearScale,
@@ -25,8 +25,11 @@ ChartJS.register(
 
 export default function App() {
   return (
-    <>
-    <Home/>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route index path="/dashboard" element={<Home/>}/>
+      </Routes> 
+    </BrowserRouter>
   )
 }

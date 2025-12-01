@@ -1,28 +1,62 @@
 import { useEffect, useState } from "react";
-import { fetchGames } from "../api/games";
+import { useSearchParams } from "react-router-dom";
+import type { MultiValue, SingleValue } from "react-select";
+import { fetchGames, fetchGamesList } from "../api/games";
 import { EnumMonthName } from "../shared/enumMonthName";
-import type { IGame } from "../shared/interfaces/IGame";
+import type { ISelectOption } from "../shared/interfaces/IGame";
 import { useGameStore, usePresentationGame } from "../stores/games";
 import DateFilter from "./components/filters/date";
+import { OptionsFilterMulti, OptionsFilterSingle } from "./components/filters/options";
+import { fetchCountriesList, fetchIndicatorsList } from "../api/economy";
 
 export default function Home(){
+    const [get, set] = useSearchParams();
+    const [gamesOption, setGamesOption] = useState<ISelectOption[]>([])
+    const [countriesOptions, setCountriesOptions] = useState<ISelectOption[]>([])
+    const [indicatorsOptions, setIndicatorsOptions] = useState<ISelectOption[]>([])
+    
     const {games, setGames} = useGameStore()
-    const [selectedGame, setSelectedGame] = useState<IGame|undefined>(undefined)
     const {presentationGameHistories, setPresentationGameHistories} = usePresentationGame()
     const [gamesDate,setGamesDate] = useState<string[]>([])
-    const [dayFilter, setDayFilter] = useState(['Todos'])
-    const [monthFilter, setMonthFilter] = useState(['Todos'])
-    const [yearFilter, setYearFilter] = useState(['Todos'])
-    
-    useEffect(()=>{
-        fetchGames()
+    /* Filtros */
+    const ALLSELECTION ={label:'Todos', value:'Todos'}
+    const [dayFilter, setDayFilter] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
+    const [monthFilter, setMonthFilter] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
+    const [yearFilter, setYearFilter] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
+    const [selectedGame, setSelectedGame] = useState<SingleValue<ISelectOption>>({label:'', value:''})
+    const [selectedCountries, setSelectedCountries] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
+    const [selectedIndicators, setSelectedIndicators] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
+
+    const fetchPriceData = (game_id:string)=>{
+        fetchGames(game_id)
         .then((data)=>{ 
             setGames(data)
-            setSelectedGame(data[0])
             setPresentationGameHistories(data[0].prices)
             setGamesDate(data[0].prices.map(({timestamp})=>timestamp))
         })
         .catch((error)=>console.log(error))
+    }
+    
+    const fetchOptions = async ()=>{
+        const indicators = await fetchIndicatorsList();
+        const countries = await fetchCountriesList();
+        setIndicatorsOptions(indicators.map(({code_input, description})=>({label:description, value:code_input})))
+        setCountriesOptions(countries.map(({code_input, description})=>({label:description, value:code_input})))
+    }
+
+
+    useEffect(()=>{
+        fetchGamesList()
+        .then((games)=>{
+            fetchOptions()
+            .then(()=>{
+                setGamesOption(games.map(({id, name})=>({label:name, value:id})))
+                const game_id = get.get("game_id")
+                !game_id && set({'game_id':games[0].id})
+                setSelectedGame({label:games[0].name, value:games[0].id})
+                fetchPriceData(!game_id ? games[0].id : game_id)
+            })
+        })
     },[])
 
     useEffect(()=>{
@@ -45,23 +79,54 @@ export default function Home(){
     },[dayFilter,monthFilter,yearFilter])
 
 
-    return (
+    useEffect(()=>{
+        if(selectedGame?.value){
+            set({'game_id':selectedGame!.value})
+            fetchPriceData(selectedGame!.value)
+        }
+    }, [selectedGame])
+
+
+    return (selectedGame && 
         <main className='w-full h-full flex flex-col'>
-            <section>
+            <section className="flex justify-around w-[45rem]">
                 <DateFilter
                     period="Ano"
                     gameDates={gamesDate}
+                    selectedOptions={yearFilter}
                     setSelectedOptions={setYearFilter}
                 />
                 <DateFilter
                     period="Mês"
                     gameDates={gamesDate}
+                    selectedOptions={monthFilter}
                     setSelectedOptions={setMonthFilter}
                 />
                 <DateFilter
                     period="Dia"
                     gameDates={gamesDate}
+                    selectedOptions={dayFilter}
                     setSelectedOptions={setDayFilter}
+                />
+            </section>
+            <section className="flex justify-around w-[45rem]">
+                <OptionsFilterSingle
+                    title="Game"
+                    options={gamesOption}
+                    selectedOptions={selectedGame}
+                    setSelectedOptions={setSelectedGame}
+                />
+                <OptionsFilterMulti
+                    title="País"
+                    options={countriesOptions}
+                    selectedOptions={selectedCountries}
+                    setSelectedOptions={setSelectedCountries}
+                />
+                <OptionsFilterMulti
+                    title="Indicador Economico"
+                    options={indicatorsOptions}
+                    selectedOptions={selectedIndicators}
+                    setSelectedOptions={setSelectedIndicators}
                 />
             </section>
             {/* {games.length > 0 &&

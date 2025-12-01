@@ -1,15 +1,18 @@
+import type { MultiValue } from "react-select";
 import { EnumMonthName } from "../../../shared/enumMonthName";
-import Filter from "./components/filter"
+import type { ISelectOption } from "../../../shared/interfaces/IGame";
+import { FilterMulti } from "./components/filter";
 
 interface DateFilterProps {
     period:'Ano' | 'Mês' | 'Dia' | 'Trimestre',
     gameDates:string[]
-    setSelectedOptions:React.Dispatch<React.SetStateAction<string[]>>
+    selectedOptions:MultiValue<ISelectOption>,
+    setSelectedOptions: React.Dispatch<React.SetStateAction<MultiValue<ISelectOption>>>
 }
 
-export default function DateFilter({period, gameDates, setSelectedOptions}:DateFilterProps){
+export default function DateFilter({period, gameDates, selectedOptions, setSelectedOptions}:DateFilterProps){
     
-    function getAvailableOptions(){
+    function getAvailableOptions():ISelectOption[]{
         let data = gameDates.map((date)=>
             period == 'Ano'? date.substring(0,4):
             period == 'Mês'? EnumMonthName[Number.parseInt(date.substring(5,7))]:
@@ -18,16 +21,18 @@ export default function DateFilter({period, gameDates, setSelectedOptions}:DateF
         const dataSet = new Set(data);
         const dataArr = [...dataSet];
         const arrTypeNumber = dataArr.every(el => typeof el === 'number'); 
-        dataArr.sort(arrTypeNumber?((a, b) => a - b):undefined);
+        if(arrTypeNumber)
+            dataArr.sort(((a, b) => a - b));
         dataArr.unshift('Todos');
-        return dataArr;
+        return dataArr.map((date)=>({label:date, value:date}));
     }
 
     return(
-        <Filter
+        <FilterMulti
             title={period}
             options={getAvailableOptions()}
-            setSelectedOption={setSelectedOptions}
+            selectedOptions={selectedOptions}
+            setSelectedOptions={setSelectedOptions}
         />
     )
 }

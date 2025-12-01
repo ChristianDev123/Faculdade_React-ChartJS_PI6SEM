@@ -1,16 +1,43 @@
-interface FilterProps{
+import Select, { type MultiValue, type SingleValue } from 'react-select'
+import type { ISelectOption } from '../../../../shared/interfaces/IGame'
+
+interface FilterMultiProps{
     title:string,
-    options: Array<string|number>,
-    setSelectedOption: React.Dispatch<React.SetStateAction<string[]>>
+    options: ISelectOption[],
+    selectedOptions:MultiValue<ISelectOption>,
+    setSelectedOptions: React.Dispatch<React.SetStateAction<MultiValue<ISelectOption>>> 
 }
 
-export default function Filter({title,options,setSelectedOption}:FilterProps){
+interface FilterSingleProps{
+    title:string,
+    options: ISelectOption[],
+    selectedOptions:SingleValue<ISelectOption>,
+    setSelectedOptions: React.Dispatch<React.SetStateAction<SingleValue<ISelectOption>>> 
+}
+
+export function FilterMulti({title,options,selectedOptions,setSelectedOptions}:FilterMultiProps){
     return(
         <div className='flex flex-col '>
             <span>{title}</span>
-            <select onChange={(e)=>setSelectedOption(Array.from(e.target.selectedOptions, option => option.value))} multiple>
-                {options.map((option,i)=>(<option value={option} key={i}>{option}</option>))}
-            </select>
+            <Select
+                options={options}
+                isMulti
+                value={selectedOptions}
+                onChange={setSelectedOptions}
+            />
+        </div>
+    )
+}
+
+export function FilterSingle({title,options,selectedOptions,setSelectedOptions}:FilterSingleProps){
+    return(
+        <div className='flex flex-col '>
+            <span>{title}</span>
+            <Select
+                options={options}
+                value={selectedOptions}
+                onChange={setSelectedOptions}
+            />
         </div>
     )
 }
