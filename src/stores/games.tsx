@@ -2,8 +2,8 @@ import { create } from "zustand";
 import type { IGame, IHistory } from "../shared/interfaces/IGame";
 
 interface GameState{
-    games:IGame[],
-    setGames:(games:IGame[])=>void
+    games:IGame|null,
+    setGames:(games:IGame)=>void
 }
 
 interface PresentationGameHistoryState{
@@ -12,7 +12,7 @@ interface PresentationGameHistoryState{
 }
 
 export const useGameStore = create<GameState>((set)=>({
-    games:[],
+    games:null,
     setGames:(games)=>set(()=>({games})),
 }))
 

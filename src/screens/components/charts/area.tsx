@@ -1,18 +1,12 @@
-import { useEffect, useState } from "react"
 import { Line } from "react-chartjs-2"
-import type { IGame } from "../../../shared/interfaces/IGame"
+import type { IHistory } from "../../../shared/interfaces/IGame"
 
 interface AreaChartProps{
-    games:IGame[]
+    history:IHistory[]
+    typePrice:'regular'|'current'
 }
 
-export default function AreaChart({games}:AreaChartProps){ 
-    const [selectedData, setSelectedData] = useState<IGame[]>([])
-    useEffect(()=>{
-        if(games.length === 0) return;
-        setSelectedData(games.filter((game, index, arr)=>(index === 0 || game.precoRegular != arr[index-1].precoRegular)))
-    },[games])
-
+export default function AreaChart({history, typePrice}:AreaChartProps){ 
     return(
         <section className="w-full h-full p-8">
             <Line
@@ -55,7 +49,10 @@ export default function AreaChart({games}:AreaChartProps){
                 data={{
                     datasets:[{
                         label:'Valores Games',
-                        data: selectedData.map(({data,precoRegular})=>({x:data,y:precoRegular})),
+                        data: history.map(({timestamp,deal})=>({
+                            x:timestamp,
+                            y:typePrice == 'regular'? deal.regular.amount: deal.price.amount
+                        })),
                         fill:true,
                         borderColor: "rgba(34,197,94,1)", // verde-500 Tailwind como exemplo
                         backgroundColor: "rgba(34,197,94,0.12)",

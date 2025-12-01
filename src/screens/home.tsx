@@ -8,6 +8,8 @@ import { useGameStore, usePresentationGame } from "../stores/games";
 import DateFilter from "./components/filters/date";
 import { OptionsFilterMulti, OptionsFilterSingle } from "./components/filters/options";
 import { fetchCountriesList, fetchIndicatorsList } from "../api/economy";
+import AreaChart from "./components/charts/area";
+import LineChart from "./components/charts/line";
 
 export default function Home(){
     const [get, set] = useSearchParams();
@@ -31,8 +33,8 @@ export default function Home(){
         fetchGames(game_id)
         .then((data)=>{ 
             setGames(data)
-            setPresentationGameHistories(data[0].prices)
-            setGamesDate(data[0].prices.map(({timestamp})=>timestamp))
+            setPresentationGameHistories(data.prices)
+            setGamesDate(data.prices.map(({timestamp})=>timestamp))
         })
         .catch((error)=>console.log(error))
     }
@@ -59,32 +61,32 @@ export default function Home(){
         })
     },[])
 
-    useEffect(()=>{
-        if(gamesDate.length === 0 || !selectedGame) return;
+    // useEffect(()=>{
+    //     if(gamesDate.length === 0 || !selectedGame) return;
         
-        const years = yearFilter.includes('Todos')? gamesDate:
-            gamesDate.filter((date)=>yearFilter.includes(date.substring(0,4)));
-        const month = monthFilter.includes('Todos')? gamesDate:
-            gamesDate.filter((date)=>monthFilter.includes(EnumMonthName[Number.parseInt(date.substring(5,7))]))
-        const day = dayFilter.includes('Todos')? gamesDate:
-            gamesDate.filter((date)=>dayFilter.includes(date.substring(8,10)));
+    //     const years = yearFilter.includes('Todos')? gamesDate:
+    //         gamesDate.filter((date)=>yearFilter.includes(date.substring(0,4)));
+    //     const month = monthFilter.includes('Todos')? gamesDate:
+    //         gamesDate.filter((date)=>monthFilter.includes(EnumMonthName[Number.parseInt(date.substring(5,7))]))
+    //     const day = dayFilter.includes('Todos')? gamesDate:
+    //         gamesDate.filter((date)=>dayFilter.includes(date.substring(8,10)));
 
-        setPresentationGameHistories(selectedGame.prices.filter(({timestamp})=>{
-            const histDate = new Date(timestamp);
-            histDate.setHours(0,0,0,0);
-            return years.includes(histDate.toISOString()) 
-            && month.includes(histDate.toISOString()) 
-            && day.includes(histDate.toISOString());
-        }))
-    },[dayFilter,monthFilter,yearFilter])
-
+    //     setPresentationGameHistories(selectedGame.prices.filter(({timestamp})=>{
+    //         const histDate = new Date(timestamp);
+    //         histDate.setHours(0,0,0,0);
+    //         return years.includes(histDate.toISOString()) 
+    //         && month.includes(histDate.toISOString()) 
+    //         && day.includes(histDate.toISOString());
+    //     }))
+    // },[dayFilter,monthFilter,yearFilter])
 
     useEffect(()=>{
         if(selectedGame?.value){
             set({'game_id':selectedGame!.value})
             fetchPriceData(selectedGame!.value)
         }
-    }, [selectedGame])
+
+    }, [selectedGame, selectedIndicators, selectedCountries])
 
 
     return (selectedGame && 
@@ -129,17 +131,18 @@ export default function Home(){
                     setSelectedOptions={setSelectedIndicators}
                 />
             </section>
-            {/* {games.length > 0 &&
+            {presentationGameHistories &&
             (
                 <>
                     <AreaChart 
-                        games={games}
+                        history={presentationGameHistories}
+                        typePrice="current"
                     />
                     <LineChart
-                        games={games}
+                        history={presentationGameHistories}
                     />
                 </>
-            )} */}
+            )}
         </main>
     )
 }

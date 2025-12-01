@@ -2,13 +2,10 @@ import type { IGame, IGameEntity } from "../shared/interfaces/IGame";
 import { api } from "./apiSetting";
 
 export const fetchGames = (gameId:string) => {
-    return new Promise<IGame[]>((resolve, reject)=>{
-        api.get(`/prices?game_id=${gameId}`)
-        .then(({data})=>{
-            if(!Array.isArray(data))
-                resolve([data])
-            resolve(data)
-        })
+    return new Promise<IGame>((resolve, reject)=>{
+        let url = `/prices?game_id=${gameId}` 
+        api.get(url)
+        .then(({data})=>resolve(data))
         .catch((error)=>reject(error))    
     })
 }

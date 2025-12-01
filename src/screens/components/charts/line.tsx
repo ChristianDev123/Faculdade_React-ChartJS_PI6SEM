@@ -1,30 +1,30 @@
 import { useEffect, useState } from "react"
 import { Line } from "react-chartjs-2"
-import type { IGame } from "../../../shared/interfaces/IGame"
-import Filter from "../filters/components/filter"
+import type { IHistory, ISelectOption } from "../../../shared/interfaces/IGame"
+import { FilterSingle } from "../filters/components/filter"
+import type { SingleValue } from "react-select"
 
 interface LineChartProps{
-    games:IGame[]
+    history:IHistory[]
 }
-type periodType = 'anual'|'mensal'
-type resumeType = 'max'|'min'|'avg'
+
 interface DataResume {
     periodo: string,
     valor: number
 }
 
-export default function LineChart({games}:LineChartProps){
+export default function LineChart({history}:LineChartProps){
     const [resumeData, setResumeData] = useState<DataResume[]>([])
-    const [period, setPeriod] = useState<periodType[]>(['mensal'])
-    const [resume, setResume] = useState<resumeType[]>(['avg'])
+    const [period, setPeriod] = useState<SingleValue<ISelectOption>>({label:'mensal', value:'mensal'})
+    const [resume, setResume] = useState<SingleValue<ISelectOption>>({label:'avg', value:'avg'})
 
     function media(){
         const dados_periodo:any= {}
 
-        games.forEach(({data, precoNaData})=>{
-            const periodo = period[0] === 'anual'? data.substring(0,4):data.substring(0,7)
+        history.forEach(({timestamp, deal:{price:{amount}}})=>{
+            const periodo = period?.value === 'anual'? timestamp.substring(0,4):timestamp.substring(0,7)
             if(!dados_periodo[periodo]) dados_periodo[periodo] = []
-            dados_periodo[periodo].push(precoNaData)
+            dados_periodo[periodo].push(amount)
         })
 
         setResumeData(Object.entries(dados_periodo).map<DataResume>(([periodo, valores])=>({
@@ -36,36 +36,44 @@ export default function LineChart({games}:LineChartProps){
     function maxMin(){
         const dados_periodo:any= {}
 
-        games.forEach(({data, precoNaData})=>{
-            const periodo = period[0] === 'anual'? data.substring(0,4):data.substring(0,7)
+        history.forEach(({timestamp, deal:{price:{amount}}})=>{
+            const periodo = period?.value === 'anual'? timestamp.substring(0,4):timestamp.substring(0,7)
             if(!dados_periodo[periodo]) dados_periodo[periodo] = []
-            dados_periodo[periodo].push(precoNaData)
+            dados_periodo[periodo].push(amount)
         })
 
         setResumeData(Object.entries(dados_periodo).map<DataResume>(([periodo, valores])=>({
             periodo,
-            valor: resume[0] === 'max'? Math.max(...valores):Math.min(...valores)
+            valor: resume?.value === 'max'? Math.max(...valores):Math.min(...valores)
         })))
     }
 
     useEffect(()=>{
-        if(games.length === 0) return;
-        if(resume[0] === 'avg') media()
+        if(history.length === 0) return;
+        if(resume?.value === 'avg') media()
         else maxMin();        
-
-    },[games, period, resume])
+    },[history, period, resume])
 
     return(
         <section className="w-full h-full p-8">
             <div className='flex justify-around'>
-                <Filter
-                    options={['mensal','anual']}
-                    setSelectedOption={setPeriod}
+                <FilterSingle
+                    selectedOptions={period}
+                    options={[
+                        {label:'mensal', value:'mensal'},
+                        {label:'anual',value:'anual'}
+                    ]}
+                    setSelectedOptions={setPeriod}
                     title='Período'
                 />
-                <Filter
-                    options={['avg', 'max', 'min']}
-                    setSelectedOption={setResume}
+                <FilterSingle
+                    selectedOptions={resume}
+                    options={[
+                        {label:'avg', value:'avg'},
+                        {label:'max',value:'max'},
+                        {label:'min',value:'min'}
+                    ]}
+                    setSelectedOptions={setResume}
                     title='Resumo'
                 />
             </div>
