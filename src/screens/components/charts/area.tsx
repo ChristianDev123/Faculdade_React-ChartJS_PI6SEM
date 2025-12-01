@@ -1,12 +1,17 @@
 import { Line } from "react-chartjs-2"
-import type { IHistory } from "../../../shared/interfaces/IGame"
 
 interface AreaChartProps{
-    history:IHistory[]
-    typePrice:'regular'|'current'
+    data: DataType[]
+    title:string
 }
 
-export default function AreaChart({history, typePrice}:AreaChartProps){ 
+interface DataType {
+    x:string,
+    y:number
+}
+
+
+export default function AreaChart({data, title}:AreaChartProps){ 
     return(
         <section className="w-full h-full p-8">
             <Line
@@ -48,11 +53,8 @@ export default function AreaChart({history, typePrice}:AreaChartProps){
                 }}
                 data={{
                     datasets:[{
-                        label:'Valores Games',
-                        data: history.map(({timestamp,deal})=>({
-                            x:timestamp,
-                            y:typePrice == 'regular'? deal.regular.amount: deal.price.amount
-                        })),
+                        label:title,
+                        data: data,
                         fill:true,
                         borderColor: "rgba(34,197,94,1)", // verde-500 Tailwind como exemplo
                         backgroundColor: "rgba(34,197,94,0.12)",
