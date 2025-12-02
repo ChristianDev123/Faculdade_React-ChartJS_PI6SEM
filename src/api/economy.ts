@@ -1,17 +1,25 @@
 import type { EconomicIndicator, EconomicIndicatorsEntity } from "../shared/interfaces/IEconomicIndicators"
 import { api } from "./apiSetting"
 
-export const fetchIndicators = (indicators:string[]=[], countries:string[]=[])=>{
+interface getIndicatorsParams {
+    countries?:string[],
+    initDate?:string|undefined,
+    endDate?:string|undefined
+}
+
+export const fetchIndicators = ({countries=[], endDate, initDate}:getIndicatorsParams)=>{
     return new Promise<EconomicIndicator[]>((resolve, reject)=>{
         let url ='/economic-indicators'; 
-        if(indicators.length > 0) {
-            const arr_indicators = countries.map((value)=>`indicators=${value}`)
-            url = `${url}?${arr_indicators.join("&")}`
-        }
+
         if(countries.length > 0){   
             const arr_countries = countries.map((value)=>`countries=${value}`)
             url = `${url}${!url.includes("?")?"?":'&'}${arr_countries.join("&")}`
         }
+        if(endDate)
+            url = `${url}${!url.includes("?")?"?":'&'}end_year=${endDate.substring(0,4)}`
+        if(initDate)
+            url = `${url}${!url.includes("?")?"?":'&'}start_year=${initDate.substring(0,4)}`
+
         api.get(url)
         .then(({data:{data}})=>resolve(data))
         .catch((e)=>reject(e))

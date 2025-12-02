@@ -3,6 +3,7 @@ import { Line } from "react-chartjs-2"
 interface AreaChartProps{
     data: DataType[]
     title:string
+    showTootipData:boolean
 }
 
 interface DataType {
@@ -11,46 +12,49 @@ interface DataType {
 }
 
 
-export default function AreaChart({data, title}:AreaChartProps){ 
+export default function AreaChart({data, title, showTootipData}:AreaChartProps){ 
+    const options: any = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: "top",
+            },
+            title: {
+                position: "bottom",
+                display: true,
+                text: "Evolução de Precificação em Games",
+            },
+        },
+        scales: {
+            x: {
+                type: "time",
+                time: {
+                    unit: "month",
+                    tooltipFormat: "PP",
+                },
+                grid: {
+                    display: false,
+                },
+            },
+            y: {
+                beginAtZero: true,
+            },
+        },
+    };
+
+    // ✅ Aplica tooltip customizado apenas quando showTootipData === true
+    if (!showTootipData) {
+        options.plugins.tooltip = {
+            callbacks: {
+                title: () => "",
+                label: (context: any) => context.parsed.y,
+            },
+        };
+    }
     return(
         <section className="w-full h-full p-8">
             <Line
-                options={{
-                    responsive:true,
-                    plugins:{
-                        legend:{
-                            position:'top'
-                        },
-                        title:{
-                            position:"bottom",
-                            display:true,
-                            text:"Evolução de Precificação em Games"
-                        }
-                    },
-                    scales:{
-                        x:{
-                            type:'time',
-                            time:{
-                                unit:'day',
-                                tooltipFormat: "PP",
-                            },
-                            title: {
-                                display: true,
-                                text: "Data",
-                            },
-                            grid: {
-                                display: false,
-                            },
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: "Preço",
-                            },
-                        },
-                    }
-                }}
+                options={options}
                 data={{
                     datasets:[{
                         label:title,

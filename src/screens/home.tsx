@@ -22,20 +22,25 @@ export default function Home(){
     const {indicators, setIndicators} = useEconIndicators()
     const [gamesDate,setGamesDate] = useState<string[]>([])
     /* Filtros */
-    const ALLSELECTION ={label:'Todos', value:'Todos'}
-    const [dayFilter, setDayFilter] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
-    const [monthFilter, setMonthFilter] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
-    const [yearFilter, setYearFilter] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
+    const [dateInitFilter, setDateInitFilter] = useState<SingleValue<ISelectOption> | null>(null)
+    const [dateEndFilter, setDateEndFilter] = useState<SingleValue<ISelectOption> | null>(null)
     const [selectedGame, setSelectedGame] = useState<SingleValue<ISelectOption>>({label:'', value:''})
-    const [selectedCountries, setSelectedCountries] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
-    const [selectedIndicators, setSelectedIndicators] = useState<MultiValue<ISelectOption>>([ALLSELECTION])
+    const [selectedCountries, setSelectedCountries] = useState<MultiValue<ISelectOption>>([])
 
     const fetchPriceData = (game_id:string)=>{
         fetchGames(game_id)
         .then((data)=>{ 
             setGames(data)
             setPresentationGameHistories(data.prices)
-            setGamesDate(data.prices.map(({timestamp})=>timestamp))
+            let dates = data.prices.map(item => item.timestamp.substring(0,10));
+            dates = [...new Set(dates)];
+            const arr_dates = dates.map((date)=>new Date(date))
+            setGamesDate([...arr_dates.map((date)=>date.toISOString().split('T')[0])])
+            const max_date = new Date(Math.max(...arr_dates)).toISOString().split('T')[0];
+            const min_date = new Date(Math.min(...arr_dates)).toISOString().split('T')[0];
+
+            setDateInitFilter({label:min_date, value:'1'})
+            setDateEndFilter({label:max_date, value:dates.length.toString()})
         })
         .catch((error)=>console.log(error))
     }
@@ -61,83 +66,86 @@ export default function Home(){
         })
         .catch((e)=>console.log(e))
 
-        fetchIndicators()
+        fetchIndicators({})
         .then((indicator)=>setIndicators(indicator))
         .catch((e)=>console.log(e))
 
     },[])
 
-    // useEffect(()=>{
-    //     if(gamesDate.length === 0 || !selectedGame) return;
-        
-    //     const years = yearFilter.includes('Todos')? gamesDate:
-    //         gamesDate.filter((date)=>yearFilter.includes(date.substring(0,4)));
-    //     const month = monthFilter.includes('Todos')? gamesDate:
-    //         gamesDate.filter((date)=>monthFilter.includes(EnumMonthName[Number.parseInt(date.substring(5,7))]))
-    //     const day = dayFilter.includes('Todos')? gamesDate:
-    //         gamesDate.filter((date)=>dayFilter.includes(date.substring(8,10)));
+    useEffect(()=>{
+        if(!games || !dateEndFilter || !dateInitFilter) return;
 
-    //     setPresentationGameHistories(selectedGame.prices.filter(({timestamp})=>{
-    //         const histDate = new Date(timestamp);
-    //         histDate.setHours(0,0,0,0);
-    //         return years.includes(histDate.toISOString()) 
-    //         && month.includes(histDate.toISOString()) 
-    //         && day.includes(histDate.toISOString());
-    //     }))
-    // },[dayFilter,monthFilter,yearFilter])
+        setPresentationGameHistories(games.prices.filter(({timestamp})=>{
+            const histDate = new Date(timestamp.substring(0,10));
+            const minDate = new Date(dateInitFilter.label);
+            const maxDate = new Date(dateEndFilter.label);
+            return histDate >= minDate && histDate <= maxDate;
+        }))
+
+        fetchIndicators({
+            countries:selectedCountries.map(({value})=>value),
+            endDate:dateEndFilter.label,
+            initDate:dateInitFilter.label
+        })
+        .then((indicator)=>setIndicators(indicator))
+        .catch((e)=>console.log(e))
+
+    },[dateInitFilter,dateEndFilter])
 
     useEffect(()=>{
         if(selectedGame?.value){
             set({'game_id':selectedGame!.value})
             fetchPriceData(selectedGame!.value)
         }
-
-    }, [selectedGame, selectedIndicators, selectedCountries])
+        if(dateEndFilter && dateInitFilter && selectedCountries)
+            fetchIndicators({
+                countries:selectedCountries.map(({value})=>value),
+                endDate:dateEndFilter.label,
+                initDate:dateInitFilter.label
+            })
+            .then((indicator)=>setIndicators(indicator))
+            .catch((e)=>console.log(e))
+    }, [selectedGame, selectedCountries])
 
 
     return (selectedGame && 
         <main className='w-full h-full flex flex-col'>
-            <section className="flex justify-around w-[45rem]">
-                <DateFilter
-                    period="Ano"
-                    gameDates={gamesDate}
-                    selectedOptions={yearFilter}
-                    setSelectedOptions={setYearFilter}
-                />
-                <DateFilter
-                    period="Mês"
-                    gameDates={gamesDate}
-                    selectedOptions={monthFilter}
-                    setSelectedOptions={setMonthFilter}
-                />
-                <DateFilter
-                    period="Dia"
-                    gameDates={gamesDate}
-                    selectedOptions={dayFilter}
-                    setSelectedOptions={setDayFilter}
-                />
+            <section className="flex justify-between">
+                <div className="w-[15rem]">
+                    <h3>Filtros de Datas</h3>
+                    <DateFilter
+                        title="Data Inicial"
+                        options={gamesDate.map((date,i)=>({label:date, value:i.toString()}))}
+                        selectedOptions={dateInitFilter}
+                        setSelectedOptions={setDateInitFilter}
+                    />
+                    <DateFilter
+                        title="Data Final"
+                        options={gamesDate.map((date,i)=>({label:date, value:i.toString()}))}
+                        selectedOptions={dateEndFilter}
+                        setSelectedOptions={setDateEndFilter}
+                    />
+                </div>
+                <div className="w-[15rem]">
+                    <h3>Filtros Dados Economicos</h3>
+                    <OptionsFilterMulti
+                        title="País"
+                        options={countriesOptions}
+                        selectedOptions={selectedCountries}
+                        setSelectedOptions={setSelectedCountries}
+                    />
+                </div>
+                <div className="w-[15rem]">
+                    <h3>Filtros de Games</h3>
+                    <OptionsFilterSingle
+                        title="Game"
+                        options={gamesOption}
+                        selectedOptions={selectedGame}
+                        setSelectedOptions={setSelectedGame}
+                    />
+                </div>
             </section>
-            <section className="flex justify-around w-[45rem]">
-                <OptionsFilterSingle
-                    title="Game"
-                    options={gamesOption}
-                    selectedOptions={selectedGame}
-                    setSelectedOptions={setSelectedGame}
-                />
-                <OptionsFilterMulti
-                    title="País"
-                    options={countriesOptions}
-                    selectedOptions={selectedCountries}
-                    setSelectedOptions={setSelectedCountries}
-                />
-                <OptionsFilterMulti
-                    title="Indicador Economico"
-                    options={indicatorsOptions}
-                    selectedOptions={selectedIndicators}
-                    setSelectedOptions={setSelectedIndicators}
-                />
-            </section>
-            <section>
+            <section className="w-full">
                 {presentationGameHistories &&(
                     <>
                         <div className="flex w-full">
@@ -148,10 +156,11 @@ export default function Home(){
                                         x:timestamp,
                                         y:amount
                                     }))}
+                                    showTootipData
                                 />
                             </div>
-                            <div className="flex flex-wrap">
-                                {indicatorsOptions.length > 0 && indicators.length > 0 && indicatorsOptions.map(({value:code2})=>{
+                            <div className="flex flex-wrap w-[40%]">
+                                {indicatorsOptions.length > 0 && indicators.length > 0 && indicatorsOptions.map(({value:code2, label}, index)=>{
                                     const dados = indicators.map((indicator)=>({...indicator , indicators:indicator.indicators.filter(({code:code1})=> code1 == code2)}))  
                                     let sumIndicators = Object.values(
                                     dados.reduce((acc, { period, indicators }) => {
@@ -162,24 +171,12 @@ export default function Home(){
                                         return acc;
                                     }, {})
                                     );
-
-                                    // 2. Contagem de registros por período (para calcular média)
-                                    const countByPeriod = dados.reduce((acc, { period }) => {
-                                        const key = String(period);
-                                        acc[key] = (acc[key] || 0) + 1;
-                                        return acc;
-                                    }, {});
-
-                                    // 3. Média por período → ainda como array
-                                    const avgIndicators:ISelectOption[] = sumIndicators.map(({ x, y }) => ({
-                                        x,
-                                        y: y / countByPeriod[x]
-                                    }));
                                     return(
                                         <div className="w-1/2">
                                             <AreaChart
-                                                title={code2}
-                                                data={avgIndicators}
+                                                key={index}
+                                                title={label}
+                                                data={sumIndicators.map(({ x, y }) => ({x,y}))}
                                             />
                                         </div>
                                     )
